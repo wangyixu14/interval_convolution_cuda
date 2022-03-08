@@ -40,15 +40,15 @@ __global__ void Max_Pooling(float* In_lower, float* In_upper, float* Out_lower, 
         tile_upper[ty][tx] = In_upper[row_i * WA + col_i];
     }
     else{
-        tile_lower[ty][tx] = (float)RAND_MIN;
-        tile_upper[ty][tx] = (float)RAND_MIN;
+        tile_lower[ty][tx] = -(float)RAND_MAX;
+        tile_upper[ty][tx] = -(float)RAND_MAX;
     }
 
     __syncthreads();
 
     if(tx < TILE_SIZE && ty < TILE_SIZE){
-        float Value_lower = (float)RAND_MIN;
-        float Value_upper = (float)RAND_MIN;
+        float Value_lower = -(float)RAND_MAX;
+        float Value_upper = -(float)RAND_MAX;
         
         for(int y = 0; y < POOL_SIZE; y++)
             for(int x = 0; x < POOL_SIZE; x++){
@@ -70,9 +70,9 @@ void reference(float* in_lower, float* in_upper, float* out_lower, float* out_up
 {
     int p_cent = (pool_size - 1) / 2;
 	for(int y = 0; y < size_Y; y++){ 
-		for(int x = 0; x < size_x; x++){
-			value_upper = (float)RAND_MIN;
-			value_lower = (float)RAND_MIN;
+		for(int x = 0; x < size_X; x++){
+			float value_upper = -(float)RAND_MAX;
+			float value_lower = -(float)RAND_MAX;
 
 			for(int j = -p_cent; j <= p_cent; j++){ 
 				for(int i = -p_cent; i <= p_cent; i++){ 
@@ -87,7 +87,8 @@ void reference(float* in_lower, float* in_upper, float* out_lower, float* out_up
 
 			out_lower[x + y * size_X] = value_lower;
 			out_upper[x + y * size_X] = value_upper;
-	}    		
+		}  		
+	}
 }
 
 void InitInterval(float* data_lower, float* data_upper, int size)

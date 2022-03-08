@@ -43,7 +43,7 @@
 EXECUTABLE	:= proj
 
 # Cuda source files (compiled with cudacc)
-CUFILES		:= convolution.cu
+CUFILES		:= max_pooling.cu
 
 # # C/C++ source files (compiled with gcc / c++)
 # CCFILES		:= interval.cpp
