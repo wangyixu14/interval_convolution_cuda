@@ -68,7 +68,7 @@ void reference(float* in_lower, float* in_upper, float* out_lower, float* out_up
 {
     int ker_cent = (kernel_size - 1) / 2;
 	for(int y = 0; y < size_Y; y++){ 
-		for(int x = 0; x < size_x; x++){
+		for(int x = 0; x < size_X; x++){
 			for(int j = -ker_cent; j <= ker_cent; j++){ 
 				for(int i = -ker_cent; i <= ker_cent; i++){ 
 					if(x + i > -1 && x + i < size_X && y + j > -1 && y + j < size_Y){
