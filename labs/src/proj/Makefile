@@ -43,7 +43,7 @@
 EXECUTABLE	:= proj
 
 # Cuda source files (compiled with cudacc)
-CUFILES		:= max_pooling.cu
+CUFILES		:= linear_operation.cu
 
 # # C/C++ source files (compiled with gcc / c++)
 # CCFILES		:= interval.cpp

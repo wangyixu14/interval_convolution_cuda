@@ -6,46 +6,62 @@
 #include <time.h>
 #include <cutil.h>
 #include <iostream>
-#include <algorithm>
 #include <assert.h>
 
 // the input matrix size
 #define WA 512 
-#define HA 512    
+#define HA 512   
 
 /*cuda version of linear operation */
 __global__ void linear(float* In_lower, float* In_upper, float* Out_lower, float* Out_upper, float* node, float* bias)
 {
+	__shared__ float inter_res[4];
     // get thread indices
     int tx = threadIdx.x;
 
     // get the data indices
     int index = tx + blockIdx.x * blockDim.x;
+    
 
-    float res_1 = In_lower[index] * node[0];
-    float res_2 = In_lower[index] * node[1];
-    float res_3 = In_upper[index] * node[0];
-    float res_4 = In_upper[index] * node[1];
-
+    inter_res[0] = In_lower[index] * node[0];
+    inter_res[1] = In_lower[index] * node[1];
+    inter_res[2] = In_upper[index] * node[0];
+    inter_res[3] = In_upper[index] * node[1];
     __syncthreads();
-    Out_lower[index] = min({res_1, res_2, res_3, res_4}) + bias[0];
-    Out_upper[index] = max({res_1, res_2, res_3, res_4}) + bias[1];
+    
+    if (index < WA * HA){
+    	float value_max = inter_res[0];
+	    float value_min = inter_res[0];
+	    for (int i = 1; i < 4; i++){
+	    	if (inter_res[i] >= value_max) value_max = inter_res[i];
+	    	if (inter_res[i] <= value_min) value_min = inter_res[i];
+	    }
+	    Out_lower[index] = value_min + bias[0];
+	    Out_upper[index] = value_max + bias[1];
+    }
 }
 
 
 /* cpu version of linear operation */
 void reference(float* in_lower, float* in_upper, float* out_lower, float* out_upper, int size_X, int size_Y, float* node, float* bias)
 {
+	float inter_res[4];
 	for (int i = 0; i < size_Y; i++){
 		for (int j = 0; j < size_X; j++){
 			int index = i * size_X + j;
-			float res_1 = in_lower[index] * node[0];
-    		float res_2 = in_lower[index] * node[1];
-    		float res_3 = in_upper[index] * node[0];
-    		float res_4 = in_upper[index] * node[1];
+			inter_res[0] = in_lower[index] * node[0];
+    		inter_res[1] = in_lower[index] * node[1];
+    		inter_res[2] = in_upper[index] * node[0];
+    		inter_res[3] = in_upper[index] * node[1];
 
-    		out_lower[index] = min({res_1, res_2, res_3, res_4}) + bias[0];
-    		out_upper[index] = max({res_1, res_2, res_3, res_4}) + bias[1];
+    		float value_max = inter_res[0];
+		    float value_min = inter_res[0];
+		    for (int p = 1; p < 4; p++){
+		    	if (inter_res[p] >= value_max) value_max = inter_res[p];
+		    	if (inter_res[p] <= value_min) value_min = inter_res[p];
+		    }
+		    out_lower[index] = value_min + bias[0];
+		    out_upper[index] = value_max + bias[1];
 		}
 	}
 }
@@ -138,7 +154,7 @@ int main(int argc, char** argv)
 
 
 	cudaEventRecord(start_G);
-	Max_Pooling <<< 34, 1024 >>>(d_A_1, d_A_2, d_B_1, d_B_2, d_node, d_bias);
+	linear <<< 34, 1024 >>>(d_A_1, d_A_2, d_B_1, d_B_2, d_node, d_bias);
 
 	cudaDeviceSynchronize();
 	cudaEventRecord(stop_G);
