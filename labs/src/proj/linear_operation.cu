@@ -15,7 +15,7 @@
 /*cuda version of linear operation */
 __global__ void linear(float* In_lower, float* In_upper, float* Out_lower, float* Out_upper, float* node, float* bias)
 {
-	__shared__ float inter_res[4];
+	float inter_res[4];
     // get thread indices
     int tx = threadIdx.x;
 

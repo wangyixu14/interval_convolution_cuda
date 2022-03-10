@@ -21,6 +21,7 @@ __global__ void Convolution(float* In_lower, float* In_upper, float* Out_lower, 
 {
     __shared__ float tile_lower[BLOCK_SIZE][BLOCK_SIZE];
     __shared__ float tile_upper[BLOCK_SIZE][BLOCK_SIZE];
+    __shared__ float ker_share[KERNEL_SIZE * KERNEL_SIZE];
 
     // get thread indices
     int tx = threadIdx.x;
@@ -44,6 +45,14 @@ __global__ void Convolution(float* In_lower, float* In_upper, float* Out_lower, 
         tile_upper[ty][tx] = 0.0f;
     }
 
+    if (tx == 0 && ty == 0){
+    	for (int i = 0; i < KERNEL_SIZE; i++){
+    		for (int j = 0; j < KERNEL_SIZE; j++){
+    			ker_share[i * KERNEL_SIZE + j] = Ker[i * KERNEL_SIZE + j];
+    		}
+    	}
+    }
+
     __syncthreads();
 
     if(tx < TILE_SIZE && ty < TILE_SIZE){
@@ -52,8 +61,8 @@ __global__ void Convolution(float* In_lower, float* In_upper, float* Out_lower, 
         
         for(int y = 0; y < KERNEL_SIZE; y++)
             for(int x = 0; x < KERNEL_SIZE; x++){
-                Value_lower += Ker[y * KERNEL_SIZE + x] * tile_lower[y + ty][x + tx];
-                Value_upper += Ker[y * KERNEL_SIZE + x] * tile_upper[y + ty][x + tx];
+                Value_lower += ker_share[y * KERNEL_SIZE + x] * tile_lower[y + ty][x + tx];
+                Value_upper += ker_share[y * KERNEL_SIZE + x] * tile_upper[y + ty][x + tx];
             }
         if(row_o < HA && col_o < WA){
             Out_lower[row_o * WA + col_o] = Value_lower;
